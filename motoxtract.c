@@ -1,7 +1,7 @@
 /*
  * motoxtract.c
  *
- * Copyright 2015 Ramsudharsan <ramsudharsanm@gmail.com>
+ * Copyright 2016 Ramsudharsan <ramsudharsanm@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +18,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  *
- *
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 
-int usage(char *name)
-{
-    printf("usage:\n");
-    printf("%s <path_to_motoboot.img_file>\n", name);
+int usage(char *name) {
+    printf("usage:\n%s <path_to_motoboot.img_file>\n", name);
     return 0;
 }
 
-//structures
 struct entry {
     char partitionName[24];
     uint32_t firstSector;
@@ -45,8 +41,7 @@ struct moto_header {
     char padding[28];
 }header;
 
-int main (int argc, char **argv)
-{
+int main (int argc, char **argv) {
     FILE *motoboot;
     unsigned char buff[1024];
     int partitionCount;
@@ -55,43 +50,35 @@ int main (int argc, char **argv)
     FILE *partitionDump;
 
     if (argc != 2)
-    {
         return usage(argv[0]);
-    }
 
     motoboot = fopen(argv[1], "r");
-    if (motoboot == NULL)
-    {
+    if (motoboot == NULL) {
         printf("unable to open %s file, abort\n", argv[1]);
         return -1;
     }
     printf("reading file %s\n", argv[1]);
 
-    //read header
     fread((void*)buff, 1024, 1, motoboot);
 
     memcpy(&header, buff, sizeof(header));
     partitionCount = header.partitionNumber;
-    if (partitionCount > 30)
-    {
+    if (partitionCount > 30) {
         printf("error reading the file, too many partitions\n");
         return -1;
     }
     printf("found %d partititions\n", partitionCount);
 
-    for (i=0; i<partitionCount; i++)
-    {
+    for (i=0; i<partitionCount; i++) {
         sprintf(partitionName, "%s.bin", header.partitions[i].partitionName);
         partitionDump = fopen(partitionName, "w+");
-        if (partitionDump == NULL)
-        {
+        if (partitionDump == NULL) {
             printf("unable to write to file %s", partitionName);
             return -1;
         }
         uint32_t sectors = header.partitions[i].lastSector - header.partitions[i].firstSector + 1;
         printf("dumping partition %d (%10s), starting offset in file 0x%08X\n", i, header.partitions[i].partitionName, 1024 + header.partitions[i].firstSector * 512);
-        for (j=0; j < sectors; j++)
-        {
+        for (j=0; j < sectors; j++) {
             fread((void*)buff, 512, 1, motoboot);
             fwrite((void*)buff, 512, 1, partitionDump);
         }
