@@ -70,7 +70,7 @@ int main (int argc, char **argv) {
     printf("found %d partititions\n", partitionCount);
 
     for (i=0; i<partitionCount; i++) {
-        sprintf(partitionName, "%s.bin", header.partitions[i].partitionName);
+        sprintf(partitionName, "%s.mbn", header.partitions[i].partitionName);
         partitionDump = fopen(partitionName, "w+");
         if (partitionDump == NULL) {
             printf("unable to write to file %s", partitionName);
