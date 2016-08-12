@@ -1,22 +1,18 @@
-A program to read and extract the partition details in Motorola Bootloader File (motoboot.img)
+# motoxtract
 
 
-Installation and Usage:
+## Installation and Usage:
 
 Step 1: gcc motoxtract.c -o motoxtract
 
 Step 2: chmod a+wx motoxtract
 
-Step 3: ./motoxtract image-name.img
+Step 3: ./motoxtract motoboot.img
 
 
-Example: Motorola Moto E XT1022
+## Output:
 
-./motoxtract motoboot.img
-
-Output:
-
-reading file /home/ramsudharsan/workspace/bootloader/motoboot.img
+reading file ~/workspace/motoboot.img
 
 found 6 partititions
 
