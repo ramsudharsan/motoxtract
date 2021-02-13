@@ -26,6 +26,9 @@
 
 #define SECTOR_SIZE 512
 #define HEADER_SIZE 1024
+
+#include "sha256.h"
+
 int usage(char *name) {
     printf("usage:\t%s <path_to_motoboot.img_file>\n", name);
     return 0;
@@ -47,6 +50,9 @@ int main (int argc, char **argv) {
     FILE *motoboot, *partitionDump;
     unsigned char buff[HEADER_SIZE];
     int partitionCount, i, j, k;
+    struct entry *curHdr = 0;
+    uint8_t curSha[32] = {0};
+    SHA256_CTX ctx = {0};
     char partitionName[32];
 
     if (argc != 2)
@@ -79,12 +85,22 @@ int main (int argc, char **argv) {
             printf("unable to write to file %s", partitionName);
             return -1;
         }
+        memset(&ctx, 0, sizeof(ctx));
+        sha256_init(&ctx);
         uint32_t sectors = curHdr->lastSector - curHdr->firstSector + 1;
         printf("dumping partition %d (%s), starting offset in file 0x%08X\n", i, curHdr->partitionName, HEADER_SIZE + curHdr->firstSector * SECTOR_SIZE);
         for (j = 0; j < sectors; j++) {
             fread((void*)buff, SECTOR_SIZE, 1, motoboot);
+            sha256_update(&ctx, buff, SECTOR_SIZE);
             fwrite((void*)buff, SECTOR_SIZE, 1, partitionDump);
         }
+        sha256_final(&ctx, curSha);
+        printf("\tSHA256: ");
+        for (k = 0; k < sizeof(curSha);k++)
+        {
+            printf("%02x", curSha[k]);
+        }
+        printf("\n");
         fclose(partitionDump);
     }
 
