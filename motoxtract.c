@@ -24,6 +24,8 @@
 #include <string.h>
 #include <stdint.h>
 
+#define SECTOR_SIZE 512
+#define HEADER_SIZE 1024
 int usage(char *name) {
     printf("usage:\t%s <path_to_motoboot.img_file>\n", name);
     return 0;
@@ -43,8 +45,8 @@ struct moto_header {
 
 int main (int argc, char **argv) {
     FILE *motoboot, *partitionDump;
-    unsigned char buff[1024];
-    int partitionCount, i, j;
+    unsigned char buff[HEADER_SIZE];
+    int partitionCount, i, j, k;
     char partitionName[32];
 
     if (argc != 2)
@@ -58,7 +60,7 @@ int main (int argc, char **argv) {
     }
     printf("reading file %s\n", argv[1]);
 
-    fread((void*)buff, 1024, 1, motoboot);
+    fread((void*)buff, sizeof(buff), 1, motoboot);
 
     memcpy(&header, buff, sizeof(header));
     partitionCount = header.partitionNumber;
@@ -67,20 +69,21 @@ int main (int argc, char **argv) {
         printf("error reading the file, too many partitions\n");
         return -1;
     }
-    printf("found %d partititions\n", partitionCount);
+    printf("found %d partitions\n", partitionCount);
 
     for (i = 0; i < partitionCount; i++) {
-        sprintf(partitionName, "%s.mbn", header.partitions[i].partitionName);
+    	curHdr = &header.partitions[i];
+        snprintf(partitionName, sizeof(partitionName), "%s_%#x_%#x.mbn", curHdr->partitionName, curHdr->firstSector, curHdr->lastSector);
         partitionDump = fopen(partitionName, "w+");
         if (partitionDump == NULL) {
             printf("unable to write to file %s", partitionName);
             return -1;
         }
-        uint32_t sectors = header.partitions[i].lastSector - header.partitions[i].firstSector + 1;
-        printf("dumping partition %d (%10s), starting offset in file 0x%08X\n", i, header.partitions[i].partitionName, 1024 + header.partitions[i].firstSector * 512);
+        uint32_t sectors = curHdr->lastSector - curHdr->firstSector + 1;
+        printf("dumping partition %d (%s), starting offset in file 0x%08X\n", i, curHdr->partitionName, HEADER_SIZE + curHdr->firstSector * SECTOR_SIZE);
         for (j = 0; j < sectors; j++) {
-            fread((void*)buff, 512, 1, motoboot);
-            fwrite((void*)buff, 512, 1, partitionDump);
+            fread((void*)buff, SECTOR_SIZE, 1, motoboot);
+            fwrite((void*)buff, SECTOR_SIZE, 1, partitionDump);
         }
         fclose(partitionDump);
     }
